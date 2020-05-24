@@ -1,6 +1,10 @@
 namespace es5.expression{
     // #region Utils
-    function evaluating (exp: Expression) {
+    /**
+     * 解析表达式
+     * @param exp
+     */
+    function evaluating (exp: Expression): any {
 
     }
 
@@ -42,12 +46,16 @@ namespace es5.expression{
         type UnaryExpression = any
 
         /**
+         * typeof 表达式
          * typeof UnaryExpression
          */
         function TypeOfExpression (exp: UnaryExpression) {
             const val = evaluating(exp)
-            if (es5.types.Type(val) === 'Reference') {
-
+            if (types.Type(val) === 'Reference') {
+                if (types.IsUnresolvableReference(val)) {
+                    return 'undefined'
+                }
+                // val =
             }
         }
     }

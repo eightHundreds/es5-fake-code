@@ -25,7 +25,7 @@ namespace es5.execution {
     /**
      * 环境记录项
      */
-    class EnvironmentRecord {
+    export class EnvironmentRecord {
         /**
          * 判断环境记录项是否包含对某个标识符的绑定
          * @param N 标识符文本
@@ -33,6 +33,15 @@ namespace es5.execution {
         HasBinding (N: string): boolean {
             // TODO
             return true
+        }
+
+        /**
+         * 返回环境记录项中一个已经存在的绑定的值
+         * @param N 指定绑定的名称
+         * @param S 是否是严格模式
+         */
+        GetBindingValue (N: string, S: boolean) {
+
         }
     }
 

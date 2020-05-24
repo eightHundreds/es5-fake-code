@@ -14,7 +14,9 @@ module.exports = {
     "@typescript-eslint/no-unused-vars": "off",
     "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/indent": ["error", 4],
-    "@typescript-eslint/prefer-ts-expect-error":"off"
+    "@typescript-eslint/prefer-ts-expect-error":"off",
+    "@typescript-eslint/strict-boolean-expressions": "off",
+    "@typescript-eslint/no-this-alias":"off"
     // 'no-param-reassign': 'off',
     // 'no-unused-expressions': 'off',
     // 'prefer-destructuring': 'off',
