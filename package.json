@@ -1,0 +1,22 @@
+{
+  "name": "es5-fake-code",
+  "version": "1.0.0",
+  "description": "尝试使用伪代码描述es5规范",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eightHundreds/es5-fake-code.git"
+  },
+  "author": "",
+  "license": "GPLV3",
+  "bugs": {
+    "url": "https://github.com/eightHundreds/es5-fake-code/issues"
+  },
+  "homepage": "https://github.com/eightHundreds/es5-fake-code#readme",
+  "devDependencies": {
+    "typescript": "^3.9.3"
+  }
+}
