@@ -15,9 +15,7 @@ namespace es5.execution {
     declare function GetStrictFlag(): boolean
     // #endregion
 
-    /**
-     * 词法环境
-     */
+    //#region 词法环境
     interface LexicalEnvironment{
         envRec: EnvironmentRecord
         outer: LexicalEnvironment|null
@@ -44,6 +42,37 @@ namespace es5.execution {
 
         }
     }
+    //#endregion
+    /**
+     * 词法环境
+     */
+   
+    //#region 执行环境
+    /**
+     * 执行环境包含所有用于追踪与其相关的代码的执行进度的状态
+     * 
+     * 当控制器转入 ECMA 脚本的可执行代码时，控制器会进入一个执行环境
+     * 当前活动的多个执行环境在逻辑上形成一个栈结构。该逻辑栈的最顶层的执行环境称为当前运行的执行环境
+     * 任何时候，当控制器从当前运行的执行环境相关的可执行代码转入与该执行环境无关的可执行代码时，会创建一个新的执行环境。
+     * 新建的这个执行环境会推入栈中，成为当前运行的执行环境。
+     */
+    export class ExecutionContexts{
+
+        /**
+         *指定该执行环境内的 ECMA 脚本代码中 this 关键字所关联的值
+         */
+        ThisBinding:any;
+    }
+
+    /**
+     * 当控制流根据一个函数对象 F、调用者提供的 thisArg 以及调用者提供的 argumentList，进入函数代码的执行环境时
+     */
+    function EnterFunctionCode(F:any ,thisArg:any,...argumentList:any[]){
+
+
+    }
+    //#endregion
+   
 
     /**
      * 标识符解析

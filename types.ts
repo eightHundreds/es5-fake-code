@@ -140,7 +140,7 @@ namespace es5.types {
     // #endregion
 
     export class Reference {
-        constructor (public readonly baseValue: Object, public readonly name: string, public readonly strict: boolean) {
+        constructor (public readonly baseValue: Object|undefined|execution.EnvironmentRecord, public readonly name: string, public readonly strict: boolean) {
         }
     }
 
