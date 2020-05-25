@@ -3,21 +3,25 @@ namespace es5.types {
     /**
      * 解析x的类型
      * @param x
-     * @returns 引用、列表、完结、属性描述式、属性标示、词法环境、 环境纪录
+     * @returns 只规范类型与语言类型
+     * ECMAScript语言类型
+     *   Undefined、Null、Boolean、String、Number、Object。
+     * 规范类型:
+     *  引用、列表、完结、属性描述式、属性标示、词法环境、 环境纪录
      */
-    export declare function Type(x: any): 'Reference'
+    export declare function Type(x: any): 'Reference' | 'Undefined' | 'Null' | 'Boolean' | 'String' | 'Number' | 'Object'
     // #endregion
 
     export class Object {
         /**
          * 对象的原型
          */
-        '[[Proptype]]': Object|null
+        '[[Proptype]]': Object | null
 
         /**
          * 与此对象的内部状态信息关联
          */
-        '[[PrimitiveValue]]': boolean|number|undefined|string
+        '[[PrimitiveValue]]': boolean | number | undefined | string
         /**
          * 返回命名属性的值
          * @param P 属性名
@@ -30,7 +34,7 @@ namespace es5.types {
          * 返回此对象的完全填入的自身命名属性的属性描述，如果不存在返回 undefined
          * @param P 属性名
          */
-        '[[GetProperty]]' (P: string): PropertyDescriptor|undefined {
+        '[[GetProperty]]' (P: string): PropertyDescriptor | undefined {
             const prop = this['[[GetOwnProperty]]'](P)
             if (prop !== undefined) {
                 return prop
@@ -92,7 +96,7 @@ namespace es5.types {
 
         }
 
-        '[[Set]]' (): void{
+        '[[Set]]' (): void {
 
         }
     }
@@ -103,7 +107,7 @@ namespace es5.types {
         '[[Value]]': any
         '[[Writable]]': boolean
     }
-    type PropertyDescriptor = AccessorPropertyDescriptor&DataPropertyDescriptor
+    type PropertyDescriptor = AccessorPropertyDescriptor & DataPropertyDescriptor
     type PropertyDescriptorConstructor = new () => PropertyDescriptor
     declare const PropertyDescriptor: PropertyDescriptorConstructor
 

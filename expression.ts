@@ -50,13 +50,23 @@ namespace es5.expression{
          * typeof UnaryExpression
          */
         function TypeOfExpression (exp: UnaryExpression) {
-            const val = evaluating(exp)
+            let val = evaluating(exp)
             if (types.Type(val) === 'Reference') {
                 if (types.IsUnresolvableReference(val)) {
                     return 'undefined'
                 }
-                // val =
+                val = types.GetValue(val)
             }
+            const map = {
+                Undefined: 'undefiend',
+                Null: 'object',
+                Boolean: 'bollean',
+                Number: 'number',
+                Object: 'object' // 原生，且没有实现 [[Call]]
+                // "Object原生或者宿主且实现了 [[Call]]":"function"
+                // "Object（宿主且没实现 [[Call]]）":"由实现定义，但不能是 "undefined"、"boolean"、"number" 或 "string"。"
+            }
+            return map[val]
         }
     }
 
