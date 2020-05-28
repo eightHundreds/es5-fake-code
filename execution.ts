@@ -73,4 +73,8 @@ namespace es5.execution {
             return GetIdentifierReference(outer, name, strict)
         }
     }
+
+    // #region 建立执行环境
+
+    // #endregion
 }
