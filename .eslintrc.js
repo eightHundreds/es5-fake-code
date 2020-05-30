@@ -17,7 +17,10 @@ module.exports = {
     "@typescript-eslint/prefer-ts-expect-error":"off",
     "@typescript-eslint/strict-boolean-expressions": "off",
     "@typescript-eslint/no-this-alias":"off",
-    "dot-notation":"off"
+    "dot-notation":"off",
+    "@typescript-eslint/no-non-null-assertion":"off",
+    "@typescript-eslint/no-unnecessary-boolean-literal-compare":"off",
+    "@typescript-eslint/no-use-before-define":"off"
     // 'no-param-reassign': 'off',
     // 'no-unused-expressions': 'off',
     // 'prefer-destructuring': 'off',

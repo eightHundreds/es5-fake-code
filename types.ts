@@ -139,7 +139,18 @@ namespace es5.types {
     }
     // #endregion
 
+    /**
+     * 引用类型
+     *
+     * 解析标识符时,得到的不是具体的数据,而是一个引用
+     */
     export class Reference {
+        /**
+         *
+         * @param baseValue 基值，一般是存放真实的数据
+         * @param name 引用的名称
+         * @param strict
+         */
         constructor (public readonly baseValue: Object|undefined|execution.EnvironmentRecord, public readonly name: string, public readonly strict: boolean) {
         }
     }
@@ -185,6 +196,7 @@ namespace es5.types {
     }
 
     /**
+     * 获得值，如果V是引用类型会解析出引用的基值
      * @param V
      */
     export function GetValue (V: any) {
@@ -198,7 +210,7 @@ namespace es5.types {
         let get
         if (IsPropertyReference(V)) {
             if (!HasPrimitiveBase(V)) { // V是对象
-                get = base['[[GET]]']
+                get = base!['[[GET]]']
             } else {
                 /**
                  * @praram P 属性名
@@ -229,5 +241,4 @@ namespace es5.types {
             )
         }
     }
-
 }
