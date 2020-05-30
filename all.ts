@@ -180,7 +180,7 @@ namespace es5{
          * @param V
          */
         export function IsPropertyReference (V: Reference) {
-            return V.baseValue instanceof es5.types.Object || HasPrimitiveBase(V)
+            return V.baseValue instanceof types.Object || HasPrimitiveBase(V)
         }
 
         /**
@@ -318,6 +318,12 @@ namespace es5{
         }
 
         export declare function ToString(V: any): string
+
+        /**
+         * 将V转换成非对象类型，ToNumber，ToString等方法内部都调用它
+         * @param V
+         */
+        export declare function ToPrimitive(V: any): any
 
         /**
          * 检查V是否能ToObject
@@ -465,14 +471,14 @@ namespace es5{
          * @param name
          * @param strict
          */
-        function GetIdentifierReference (lex: LexicalEnvironment|null, name: string, strict: boolean): es5.types.Reference {
+        function GetIdentifierReference (lex: LexicalEnvironment|null, name: string, strict: boolean): types.Reference {
             if (lex === null) {
-                return new es5.types.Reference(undefined, name, strict)
+                return new types.Reference(undefined, name, strict)
             }
             const envRec = lex.envRec
             const exists = envRec.HasBinding(name)
             if (exists) {
-                return new es5.types.Reference(envRec, name, strict)
+                return new types.Reference(envRec, name, strict)
             } else {
                 const outer = lex.outer
                 return GetIdentifierReference(outer, name, strict)
