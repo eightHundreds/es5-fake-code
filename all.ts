@@ -316,6 +316,22 @@ namespace es5{
             }
             return false
         }
+
+        export declare function ToString(V: any): string
+
+        /**
+         * 检查V是否能ToObject
+         * @param V
+         */
+        export function CheckObjectCoercible (V: any) {
+            switch (types.Type(V)) {
+                case 'Null':
+                case 'Undefined':
+                    throw TypeError()
+                default:
+                    break
+            }
+        }
     }
 
     /**
@@ -347,6 +363,15 @@ namespace es5{
          * 环境记录项
          */
         export class EnvironmentRecord {
+            /**
+             * 这个是规范中没有直接提到的结构,是我自己定义的.
+             * 它保存了标识符文本与数据的映射
+             */
+            protected bindingMap: Record<string, {
+                value: any
+                mutable: boolean // 是否可变
+            }> = {}
+
             /**
              * 判断环境记录项是否包含对某个标识符的绑定
              * @param N 标识符文本
@@ -389,7 +414,11 @@ namespace es5{
             GetBindingValue (N: string, S: boolean) {
                 const envRec = this // 令 envRec 为函数调用时对应的声明式环境记录项
                 assert(envRec.HasBinding(N))
-                // TODO
+                // 未初始化的不可变绑定
+                if (this.bindingMap[N].mutable && this.bindingMap[N].value === undefined) {
+                    throw ReferenceError()
+                }
+                return this.bindingMap[N].value
             }
         }
         // #endregion
@@ -454,7 +483,7 @@ namespace es5{
     /**
      * 11 表达式
      */
-    namespace expression{
+    namespace expression {
         // #region Utils
         /**
          * 解析表达式
@@ -518,7 +547,22 @@ namespace es5{
          */
         namespace LeftHandSideExpression{
             type MemberExpression=any
+            /**
+             * 属性访问表达式
+             * left[right]
+             */
+            function MemberExpression (left: MemberExpression, right: Expression) {
+                const baseReference = evaluating(left)
+                const baseValue = types.GetValue(baseReference)
+                const propertyNameReference = evaluating(right)
+                const propertyNameValue = types.GetValue(propertyNameReference)
 
+                conversion.CheckObjectCoercible(baseValue)
+                const propertyNameString = conversion.ToString(propertyNameValue)
+                const strict = currentCodeIsStrict()
+
+                return new types.Reference(baseValue, propertyNameString, strict)
+            }
         }
         type LeftHandSideExpression = any
 
@@ -635,7 +679,7 @@ namespace es5{
     /**
      * 12 语句
      */
-    namespace statement{
+    namespace statement {
 
     }
 
