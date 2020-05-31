@@ -11,3 +11,8 @@ function assert (expect: boolean) {
 function assertType<T> (v: any): v is T {
     return true
 }
+
+/**
+ * 正在执行中的语法产生式包含在严格模式代码当中
+ */
+declare function currentCodeIsStrict (): boolean
