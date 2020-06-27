@@ -26,9 +26,19 @@ namespace es5{
 
         export class Object {
             /**
+             *说明规范定义的对象分类的一个字符串值
+             */
+            '[[Class]]': string
+
+            /**
              * 对象的原型
              */
             '[[Proptype]]': Object | null
+
+            /**
+             *如果是 true，可以向对象添加自身属性。
+             */
+            '[[Extensible]]': boolean
 
             /**
              * 与此对象的内部状态信息关联
@@ -77,12 +87,14 @@ namespace es5{
                     D['[[Set]]'] = X['[[Set]]']
                 }
                 D['[[Enumerable]]'] = X['[[Enumerable]]']
-                D['[[Configurable]] '] = X['[[Configurable]] ']
+                D['[[Configurable]]'] = X['[[Configurable]]']
                 return D
             }
 
-            // 本项目的其他地方会调用原生的call,但实际上就是调用这个[[Call]]
-            '[[Call]]' (thisArgs, ...args: any[]) {
+            /**
+             * 创建或修改自身命名属性为拥有属性描述里描述的状态。flag 控制失败处理
+             */
+            '[[DefineOwnProperty]]' (P: string, Desc: Partial<PropertyDescriptor>, Throw: boolean) {
 
             }
         }
@@ -90,14 +102,9 @@ namespace es5{
         /**
          * 属性描述符类型是用来解释命名属性具体操作的特性集
          */
-        abstract class PropertyDescriptorBase extends Object {
-            '[[Enumerable]]' () {
-
-            }
-
-            '[[Configurable]] ' () {
-
-            }
+        abstract class PropertyDescriptorBase {
+            '[[Enumerable]]': boolean
+            '[[Configurable]]': boolean
         }
         /**
          * 访问器属性描述符
@@ -358,26 +365,34 @@ namespace es5{
           * 获得当前环境是否是严格模式
           */
         declare function GetStrictFlag(): boolean
+
+        /**
+         * 获得代码的类型,全局代码,eval代码,function代码
+         */
+        declare function GetCodeType(code: string): 'eval'|'global'|'function'
+
         // #endregion
 
         // #region 词法环境
-        interface LexicalEnvironment{
-            envRec: EnvironmentRecord
-            outer: LexicalEnvironment|null
+        export class LexicalEnvironment {
+            envRec!: EnvironmentRecord
+            outer?: LexicalEnvironment | null
         }
+        /**
+         * 全局环境 (词法环境)
+         */
+        const GlobalEnvironment = (function () {
+            const C = new LexicalEnvironment()
+            const record = new ObjectEnvironmentRecord()
+            record.bindingObject = globalThis
+            C.envRec = record
+            C.outer = null
+            return C
+        })()
         /**
          * 环境记录项
          */
         export class EnvironmentRecord {
-            /**
-             * 这个是规范中没有直接提到的结构,是我自己定义的.
-             * 它保存了标识符文本与数据的映射
-             */
-            protected bindingMap: Record<string, {
-                value: any
-                mutable: boolean // 是否可变
-            }> = {}
-
             /**
              * 判断环境记录项是否包含对某个标识符的绑定
              * @param N 标识符文本
@@ -402,16 +417,19 @@ namespace es5{
          * 声明式环境记录项
          *
          * 声明式环境记录项都与一个包含`变量`和（或）`函数声明`的 ECMA 脚本的程序作用域相关联
+         * 例如 FunctionDeclaration、VariableDeclaration 以及 Catch 语句
          *
          */
         export class DeclarativeEnvironmentRecord extends EnvironmentRecord {
+            /**
+             * 这个是规范中没有直接提到的结构,是我自己定义的.
+             * 它保存了标识符文本与数据的映射
+             */
+            private readonly bindingMap: Record<string, {
+                value: any
+                mutable: boolean // 是否可变
+            }> = {}
 
-        }
-
-        /**
-         * 对象环境记录项
-         */
-        export class ObjectEnvironmentRecord extends EnvironmentRecord {
             /**
              * 返回环境记录项中一个已经存在的绑定的值
              * @param N 指定绑定的名称
@@ -427,10 +445,20 @@ namespace es5{
                 return this.bindingMap[N].value
             }
         }
-        // #endregion
+
         /**
-         * 词法环境
+         * 对象环境记录项
+         * 对象式环境记录项用于定义那些将标识符与具体对象的属性绑定的 ECMA 脚本元素，例如 Program 以及 WithStatement 表达式
          */
+        export class ObjectEnvironmentRecord extends EnvironmentRecord {
+            /**
+             * 绑定对象
+             * 对象式环境记录项没有不可变绑定
+             */
+            public bindingObject!: Record<string, any>
+            provideThis: boolean=false
+        }
+        // #endregion
 
         // #region 执行环境
         /**
@@ -441,11 +469,34 @@ namespace es5{
          * 任何时候，当控制器从当前运行的执行环境相关的可执行代码转入与该执行环境无关的可执行代码时，会创建一个新的执行环境。
          * 新建的这个执行环境会推入栈中，成为当前运行的执行环境。
          */
-        export class ExecutionContexts {
+        export class ExecutionContext {
             /**
              *指定该执行环境内的 ECMA 脚本代码中 this 关键字所关联的值
              */
             ThisBinding: any
+
+            /**
+             * 词法环境
+             * 指定一个词法环境对象，用于解析该执行环境内的代码创建的标识符引用。
+             * 在该执行环境相关联的代码的执行过程中，变量环境组件永远不变，而词法环境组件有可能改变
+             */
+            LexicalEnvironment!: LexicalEnvironment
+
+            /**
+             * 变量环境
+             *指定一个词法环境对象，其环境数据用于保存由该执行环境内的代码通过 VariableStatement 和 FunctionDeclaration 创建的绑定。
+             */
+            VariableEnvironment!: LexicalEnvironment
+        }
+
+        /**
+         * 进入全局代码
+         */
+        function EnterGlobalCode () {
+            const C = new ExecutionContext()
+            C.VariableEnvironment = GlobalEnvironment
+            C.LexicalEnvironment = GlobalEnvironment
+            C.ThisBinding = globalThis
         }
 
         /**
@@ -454,6 +505,26 @@ namespace es5{
         function EnterFunctionCode (F: any, thisArg: any, ...argumentList: any[]) {
 
         }
+
+        /**
+         * 声明式绑定初始化
+         */
+        function DeclarationBindingInstantiation (code: string) {
+            const env = GetCurrentLexicalEnvironment().envRec
+            let configurableBindings = false
+            let strict = false
+
+            if (GetCodeType(code) === 'eval') {
+                configurableBindings = true
+            }
+            if (currentCodeIsStrict()) {
+                strict = true
+            }
+            if (GetCodeType(code) === 'function') {
+                // TODO
+            }
+        }
+
         // #endregion
 
         /**
@@ -480,7 +551,7 @@ namespace es5{
             if (exists) {
                 return new types.Reference(envRec, name, strict)
             } else {
-                const outer = lex.outer
+                const outer = lex.outer!
                 return GetIdentifierReference(outer, name, strict)
             }
         }
@@ -690,6 +761,82 @@ namespace es5{
     }
 
     /**
+     * 13 函数定义
+     */
+    namespace functionDeclaration{
+        // #region Utils
+        /**
+         * 获得参数列表的标识符字符串
+         */
+        declare function getArgumentNames(argumentList): string[]
+
+        // #endregion
+
+        /**
+         * 创建函数对象
+         */
+        export function createFunctionObject (argumentList, functionBody, scope: execution.LexicalEnvironment, strict: boolean) {
+            let F = new types.Object()
+            F = F as builtins.Function
+            F['[[Class]]'] = 'Function'
+            // 设定 F 的 [[Prototype]] 内部属性为 15.3.3.1 指定的标准内置 Function 对象的 prototype 属性。
+            F['[[Proptype]]'] = builtins.Function.prototype
+            // 依照 15.3.5.4 描述，设定 F 的 [[Get]] 内部属性。即F.[[Get]]
+            // 依照 13.2.1 描述，设定 F 的 [[Call]] 内部属性。即F.[[Call]]
+            // 依照 13.2.2 描述，设定 F 的 [[Construct]] 内部属性。即F.[[Construct]]
+            // 依照 15.3.5.3 描述，设定 F 的 [[HasInstance]] 内部属性。即F.[[HasInstance]]
+            F['[[Scope]]'] = scope
+            const names = getArgumentNames(argumentList)
+            F['[[FormalParameters]]'] = names
+            F['[[Code]]'] = functionBody
+            F['[[Extensible]]'] = true
+
+            const len = argumentList.length
+            F['[[DefineOwnProperty]]']('length', {
+                '[[Value]]': len,
+                '[[Enumerable]]': false
+            }, false)
+            const proto = new types.Object()
+            proto['[[DefineOwnProperty]]']('constructor', {
+                '[[Value]]': proto,
+                '[[Writable]]': true,
+                '[[Enumerable]]': false,
+                '[[Configurable]]': true
+            }, false)
+            F['[[DefineOwnProperty]]']('prototype', {
+                '[[Value]]': proto,
+                '[[Writable]]': true,
+                '[[Enumerable]]': false,
+                '[[Configurable]]': false
+            }, false)
+
+            if (strict) {
+                const thrower = ThrowTypeError
+                F['[[DefineOwnProperty]]']('caller', {
+                    '[[Get]]': thrower,
+                    '[[Set]]': thrower,
+                    '[[Enumerable]]': false,
+                    '[[Configurable]]': false
+                }, false)
+                F['[[DefineOwnProperty]]']('arguments', {
+                    '[[Get]]': thrower,
+                    '[[Set]]': thrower,
+                    '[[Enumerable]]': false,
+                    '[[Configurable]]': false
+                }, false)
+            }
+            return F
+        }
+
+        /**
+         * [[ThrowTypeError]] 对象是个唯一的函数对象
+         */
+        const ThrowTypeError = (function () {
+            return () => {}
+        })()
+    }
+
+    /**
      * 15 内置类型
      */
     namespace builtins{
@@ -710,6 +857,48 @@ namespace es5{
                 super()
             }
         }
+        export class Function extends types.Object {
+            /**
+             * 对象自身是一个函数对象 ( 它的 [[Class]] 是 "Function")，调用这个函数对象时，接受任何参数并返回 undefined
+             * 对象的 [[Prototype]] 内部属性值是标准内置 Object 的 prototype 对象 (15.2.4)。Function 的 prototype 对象的 [[Extensible]] 内部属性的初始值是 true
+             * 对象自身没有 valueOf 属性 ; 但是，它从 Object 的 prototype 对象继承了 valueOf 属性
+             * 对象的 length 属性是 0
+             */
+            // @ts-ignore
+            static prototype!: functionDeclaration.FunctionObject
+
+            /**
+             * 返回一个表示参数对象是否可能是由本对象构建的布尔值。在标准内置 ECMAScript 对象中只有 Function 对象实现 [[HasInstance]]
+             */
+            '[[HasInstance]]' () {
+
+            }
+
+            /**
+             * 一个定义了函数对象执行的环境的词法环境。在标准内置 ECMAScript 对象中只有 Function 对象实现 [[Scope]]。
+             */
+            '[[Scope]]': execution.LexicalEnvironment
+
+            /**
+             *一个包含 Function 的 FormalParameterList 的标识符字符串的可能是空的列表。在标准内置 ECMAScript 对象中只有 Function 对象实现 [[FormalParameterList]] Question.png。
+             */
+            '[[FormalParameters]]': string[]
+
+            /**
+             *函数的 ECMAScript 代码。在标准内置 ECMAScript 对象中只有 Function 对象实现 [[Code]]。
+             */
+            '[[Code]]': any
+
+            // 本项目的其他地方会调用原生的call,但实际上就是调用这个[[Call]]
+            '[[Call]]' (thisArgs, ...args: any[]) {
+
+            }
+
+            '[[Construct]]' (argumentList?: any[]) {
+
+            }
+        }
+
     }
 
 }
