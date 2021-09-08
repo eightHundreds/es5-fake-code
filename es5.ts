@@ -1,10 +1,10 @@
-namespace es5{
+namespace es5 {
 
     /**
      * 7 词法
      */
-    namespace lexical{
-        export type Identifier=any
+    namespace lexical {
+        export type Identifier = any
     }
 
     /**
@@ -22,6 +22,13 @@ namespace es5{
          *  引用、列表、完结、属性描述式、属性标示、词法环境、 环境纪录
          */
         export declare function Type(x: any): 'Reference' | 'Undefined' | 'Null' | 'Boolean' | 'String' | 'Number' | 'Object'
+
+        /**
+         * 判断是否是原始类型
+         * @deprecated 非规范 方法
+         * @param x 
+         */
+        export declare function isPrimitive(x: any): boolean;
         // #endregion
 
         export class Object {
@@ -48,7 +55,7 @@ namespace es5{
              * 返回命名属性的值
              * @param P 属性名
              */
-            '[[GET]]' (P: string) {
+            '[[GET]]'(P: string) {
                 // const desc =
             }
 
@@ -56,7 +63,7 @@ namespace es5{
              * 返回此对象的完全填入的自身命名属性的属性描述，如果不存在返回 undefined
              * @param P 属性名
              */
-            '[[GetProperty]]' (P: string): PropertyDescriptor | undefined {
+            '[[GetProperty]]'(P: string): PropertyDescriptor | undefined {
                 const prop = this['[[GetOwnProperty]]'](P)
                 if (prop !== undefined) {
                     return prop
@@ -72,7 +79,7 @@ namespace es5{
              * 返回此对象的自身命名属性的属性描述，如果不存在返回 undefined
              * @param P 属性名
              */
-            '[[GetOwnProperty]]' (P: string) {
+            '[[GetOwnProperty]]'(P: string) {
                 if (!(P in this)) {
                     return undefined
                 }
@@ -94,8 +101,41 @@ namespace es5{
             /**
              * 创建或修改自身命名属性为拥有属性描述里描述的状态。flag 控制失败处理
              */
-            '[[DefineOwnProperty]]' (P: string, Desc: Partial<PropertyDescriptor>, Throw: boolean) {
+            '[[DefineOwnProperty]]'(P: string, Desc: Partial<PropertyDescriptor>, Throw: boolean) {
 
+            }
+
+            /**
+             * 返回对象的默认值
+             * @param hint hint 是一个字符串 
+             */
+            '[[DefaultValue]]'(hint?: 'String' | 'Number') {
+                if (hint === 'String') {
+                    const toString = this["[[GET]]"]('toString');
+                    if (conversion.IsCallable(toString)) {
+                        const str = toString.call(this)
+                        if (isPrimitive(str)) {
+                            return str
+                        }
+                    }
+
+                    const valueOf = this["[[GET]]"]('valueOf');
+                    if (conversion.IsCallable(valueOf)) {
+                        const val = valueOf.call(this)
+                        if (isPrimitive(val)) {
+                            return val
+                        }
+                    }
+                    throw TypeError()
+                } else if (hint === 'Number') {
+                    // 同上, 只是顺序是先尝试调用valueOf,后调用toString
+                } else { // hint为空时
+                    if (this instanceof Date) {
+                        this["[[DefaultValue]]"]('String')
+                    } else {
+                        this["[[DefaultValue]]"]('Number')
+                    }
+                }
             }
         }
         // #region 属性描述符
@@ -111,11 +151,11 @@ namespace es5{
          */
         abstract class AccessorPropertyDescriptor extends PropertyDescriptorBase {
             // [[Get]] 或 [[Set]]
-            '[[Get]]' (): any {
+            '[[Get]]'(): any {
 
             }
 
-            '[[Set]]' (): void {
+            '[[Set]]'(): void {
 
             }
         }
@@ -137,7 +177,7 @@ namespace es5{
             name: string
             descriptor: PropertyDescriptorBase
         }
-        export function IsDataDescriptor (Desc: any): Desc is DataPropertyDescriptor {
+        export function IsDataDescriptor(Desc: any): Desc is DataPropertyDescriptor {
             if (Desc === undefined) {
                 return false
             }
@@ -147,7 +187,7 @@ namespace es5{
             return true
         }
 
-        export function IsAccessorDescriptor (Desc: any): Desc is AccessorPropertyDescriptor {
+        export function IsAccessorDescriptor(Desc: any): Desc is AccessorPropertyDescriptor {
             if (Desc === undefined) {
                 return false
             }
@@ -170,15 +210,15 @@ namespace es5{
              * @param name 引用的名称
              * @param strict
              */
-            constructor (public readonly baseValue: Object|undefined|execution.EnvironmentRecord, public readonly name: string, public readonly strict: boolean) {
+            constructor(public readonly baseValue: Object | undefined | execution.EnvironmentRecord, public readonly name: string, public readonly strict: boolean) {
             }
         }
 
-        export function IsUnresolvableReference (V: Reference) {
+        export function IsUnresolvableReference(V: Reference) {
             return V.baseValue === undefined
         }
 
-        export function GetBase (V: Reference) {
+        export function GetBase(V: Reference) {
             return V.baseValue
         }
 
@@ -186,7 +226,7 @@ namespace es5{
          * 是否是属性引用
          * @param V
          */
-        export function IsPropertyReference (V: Reference) {
+        export function IsPropertyReference(V: Reference) {
             return V.baseValue instanceof types.Object || HasPrimitiveBase(V)
         }
 
@@ -194,7 +234,7 @@ namespace es5{
         * 是否有有原始类型的基值
         * @param V
         */
-        export function HasPrimitiveBase (V: Reference) {
+        export function HasPrimitiveBase(V: Reference) {
             return (V.baseValue instanceof Boolean || V.baseValue instanceof String || V.baseValue instanceof Number)
         }
 
@@ -202,7 +242,7 @@ namespace es5{
          * 返回引用值 V 的引用名称部分
          * @param V
          */
-        export function GetReferencedName (V: Reference) {
+        export function GetReferencedName(V: Reference) {
             return V.name
         }
 
@@ -210,7 +250,7 @@ namespace es5{
          * 返回引用值 V 的严格引用部分
          * @param V
          */
-        export function IsStrictReference (V: Reference) {
+        export function IsStrictReference(V: Reference) {
             return V.strict
         }
 
@@ -218,7 +258,7 @@ namespace es5{
          * 获得值，如果V是引用类型会解析出引用的基值
          * @param V
          */
-        export function GetValue (V: any) {
+        export function GetValue(V: any) {
             if (Type(V) !== 'Reference') {
                 return V
             }
@@ -265,8 +305,8 @@ namespace es5{
     /**
      * 9 类型转换和测试
      */
-    namespace conversion{
-        export function ToObject (V: any) {
+    namespace conversion {
+        export function ToObject(V: any) {
             if (V === null) {
                 throw TypeError()
             }
@@ -274,11 +314,11 @@ namespace es5{
                 case 'undefined':
                     throw TypeError()
                 case 'boolean':
-                {
-                    const o = new builtins.Boolean(V)
-                    o['[[PrimitiveValue]]'] = V
-                    return o
-                }
+                    {
+                        const o = new builtins.Boolean(V)
+                        o['[[PrimitiveValue]]'] = V
+                        return o
+                    }
                 case 'number': {
                     const o = new builtins.Number(V)
                     o['[[PrimitiveValue]]'] = V
@@ -298,7 +338,7 @@ namespace es5{
          * 将V转换成Boolean原始值(不是对象)
          * @param V
          */
-        export function ToBoolean (V: any): false | true {
+        export function ToBoolean(V: any): false | true {
             switch (types.Type(V)) {
                 case 'Undefined':
                     return false
@@ -307,17 +347,17 @@ namespace es5{
                 case 'Boolean':
                     return V
                 case 'Number':
-                {
-                    if (V === 0 || isNaN(V)) {
-                        return false
+                    {
+                        if (V === 0 || isNaN(V)) {
+                            return false
+                        }
+                        return true
                     }
-                    return true
-                }
                 case 'String':
-                {
-                    const str = V as string
-                    return str.length !== 0
-                }
+                    {
+                        const str = V as string
+                        return str.length !== 0
+                    }
                 case 'Object':
                     return true
             }
@@ -325,18 +365,29 @@ namespace es5{
         }
 
         export declare function ToString(V: any): string
+        /**
+         * 是否可调用对象
+         * @param V 
+         */
+        export declare function IsCallable(V: any): boolean;
 
         /**
          * 将V转换成非对象类型，ToNumber，ToString等方法内部都调用它
+         * 返回该对象的默认值。调用该对象的内部方法 [[DefaultValue]] 来恢复这个默认值，调用时传递暗示期望类型（所有 ECAMScript 本地对象的 [[DefaultValue]] 一樣）。
          * @param V
          */
-        export declare function ToPrimitive(V: any): any
+        export declare function ToPrimitive(V: any, hint?: 'String' | 'Number'): any {
+            if (types.Type(V) !== 'Object') {
+                return V;
+            }
+            return (V as types.Object)['[[DefaultValue]]'](hint);
+        }
 
         /**
          * 检查V是否能ToObject
          * @param V
          */
-        export function CheckObjectCoercible (V: any) {
+        export function CheckObjectCoercible(V: any) {
             switch (types.Type(V)) {
                 case 'Null':
                 case 'Undefined':
@@ -355,7 +406,7 @@ namespace es5{
         /**
          * 获得当前运行的执行环境的词法环境
          */
-        function GetCurrentLexicalEnvironment (): LexicalEnvironment {
+        function GetCurrentLexicalEnvironment(): LexicalEnvironment {
             // TODO
             let env: LexicalEnvironment
             // @ts-ignore
@@ -369,7 +420,7 @@ namespace es5{
         /**
          * 获得代码的类型,全局代码,eval代码,function代码
          */
-        declare function GetCodeType(code: string): 'eval'|'global'|'function'
+        declare function GetCodeType(code: string): 'eval' | 'global' | 'function'
 
         // #endregion
 
@@ -397,7 +448,7 @@ namespace es5{
              * 判断环境记录项是否包含对某个标识符的绑定
              * @param N 标识符文本
              */
-            HasBinding (N: string): boolean {
+            HasBinding(N: string): boolean {
                 // TODO
                 return true
             }
@@ -407,7 +458,7 @@ namespace es5{
              * @param N 指定绑定的名称
              * @param S 是否是严格模式
              */
-            GetBindingValue (N: string, S: boolean) {
+            GetBindingValue(N: string, S: boolean) {
 
             }
         }
@@ -435,7 +486,7 @@ namespace es5{
              * @param N 指定绑定的名称
              * @param S 是否是严格模式
              */
-            GetBindingValue (N: string, S: boolean) {
+            GetBindingValue(N: string, S: boolean) {
                 const envRec = this // 令 envRec 为函数调用时对应的声明式环境记录项
                 assert(envRec.HasBinding(N))
                 // 未初始化的不可变绑定
@@ -456,7 +507,7 @@ namespace es5{
              * 对象式环境记录项没有不可变绑定
              */
             public bindingObject!: Record<string, any>
-            provideThis: boolean=false
+            provideThis: boolean = false
         }
         // #endregion
 
@@ -492,7 +543,7 @@ namespace es5{
         /**
          * 进入全局代码
          */
-        function EnterGlobalCode () {
+        function EnterGlobalCode() {
             const C = new ExecutionContext()
             C.VariableEnvironment = GlobalEnvironment
             C.LexicalEnvironment = GlobalEnvironment
@@ -502,14 +553,14 @@ namespace es5{
         /**
          * 当控制流根据一个函数对象 F、调用者提供的 thisArg 以及调用者提供的 argumentList，进入函数代码的执行环境时
          */
-        function EnterFunctionCode (F: any, thisArg: any, ...argumentList: any[]) {
+        function EnterFunctionCode(F: any, thisArg: any, ...argumentList: any[]) {
 
         }
 
         /**
          * 声明式绑定初始化
          */
-        function DeclarationBindingInstantiation (code: string) {
+        function DeclarationBindingInstantiation(code: string) {
             const env = GetCurrentLexicalEnvironment().envRec
             let configurableBindings = false
             let strict = false
@@ -530,7 +581,7 @@ namespace es5{
         /**
          * 标识符解析
          */
-        function resolveIdentifier (identifier: string) {
+        function resolveIdentifier(identifier: string) {
             const env = GetCurrentLexicalEnvironment()
             const strict = GetStrictFlag()
             return GetIdentifierReference(env, identifier, strict)
@@ -542,7 +593,7 @@ namespace es5{
          * @param name
          * @param strict
          */
-        function GetIdentifierReference (lex: LexicalEnvironment|null, name: string, strict: boolean): types.Reference {
+        function GetIdentifierReference(lex: LexicalEnvironment | null, name: string, strict: boolean): types.Reference {
             if (lex === null) {
                 return new types.Reference(undefined, name, strict)
             }
@@ -567,7 +618,7 @@ namespace es5{
          * @param exp
          * 即获得exp的结果,比如对于标识符a,它的解析结果是一个 {@type es5.types.Reference}
          */
-        function evaluating (exp: Expression): any {
+        function evaluating(exp: Expression): any {
 
         }
 
@@ -622,13 +673,13 @@ namespace es5{
          *  NewExpression
          *  CallExpression
          */
-        namespace LeftHandSideExpression{
-            type MemberExpression=any
+        namespace LeftHandSideExpression {
+            type MemberExpression = any
             /**
              * 属性访问表达式
              * left[right]
              */
-            function MemberExpression (left: MemberExpression, right: Expression) {
+            function MemberExpression(left: MemberExpression, right: Expression) {
                 const baseReference = evaluating(left)
                 const baseValue = types.GetValue(baseReference)
                 const propertyNameReference = evaluating(right)
@@ -646,7 +697,7 @@ namespace es5{
         /**
          * 11.3 后缀表达式
          */
-        namespace PostfixExpression{
+        namespace PostfixExpression {
 
         }
         type PostfixExpression = any
@@ -667,14 +718,14 @@ namespace es5{
          *      ~ UnaryExpression
          *      ! UnaryExpression
          */
-        namespace UnaryOperators{
+        namespace UnaryOperators {
             type UnaryExpression = any
 
             /**
              * typeof 表达式
              * typeof UnaryExpression
              */
-            function TypeOfExpression (exp: UnaryExpression) {
+            function TypeOfExpression(exp: UnaryExpression) {
                 let val = evaluating(exp)
                 if (types.Type(val) === 'Reference') {
                     if (types.IsUnresolvableReference(val)) {
@@ -698,13 +749,72 @@ namespace es5{
              * 逻辑非运算符
              * UnaryExpression : ! UnaryExpression
              */
-            function LogicalNOTOperator (exp: UnaryExpression) {
+            function LogicalNOTOperator(exp: UnaryExpression) {
                 const expr = evaluating(exp)
                 const oldValue = conversion.ToBoolean(types.GetValue(expr))
                 if (oldValue) {
                     return false
                 }
                 return true
+            }
+        }
+
+
+        /**
+         * 11.5 乘法运算符
+         *    MultiplicativeExpression :
+         *        UnaryExpression
+         *        MultiplicativeExpression * UnaryExpression
+         *        MultiplicativeExpression / UnaryExpression
+         *        MultiplicativeExpression % UnaryExpression
+         */
+        namespace MultiplicativeOperators {
+            export type MultiplicativeExpression = any;
+        }
+
+        /**
+         * 11.6 加法运算符
+         * AdditiveExpression :
+         *  MultiplicativeExpression
+         *  AdditiveExpression + MultiplicativeExpression
+         *  AdditiveExpression - MultiplicativeExpression
+         */
+        namespace AdditiveOperators {
+            export type AdditiveExpression = any
+
+            /**
+             * AdditiveExpression + MultiplicativeExpression
+             * @param left 
+             * @param right 
+             */
+            function AdditionOperator(left: AdditiveExpression, right: MultiplicativeOperators.MultiplicativeExpression) {
+                const lref = evaluating(left);
+                const lval = types.GetValue(lref);
+                const rref = evaluating(right);
+                const rval = types.GetValue(rref);
+
+                const lprim = conversion.ToPrimitive(lval);
+                const rprim = conversion.ToPrimitive(rval);
+
+                if (types.Type(lprim) === 'String' || types.Type(rprim) === 'String') {
+                    return `${conversion.ToString(lprim)}${conversion.ToBoolean(rprim)}`
+                }
+
+                // 当两个都是数值时
+                
+                /*
+                加法遵循 IEEE 754 二进制双精度幅度浮点算法规则：
+                    若两个操作数之一为 NaN，结果为 NaN。
+                    两个正负号相反的无穷之和为 NaN。
+                    两个正负号相同的无穷大之和是具有相同正负的无穷大。
+                    无穷大和有穷值之和等于操作数中的无穷大。
+                    两个负零之和为 -0。
+                    两个正零，或者两个正负号相反的零之和为 +0。
+                    零与非零有穷值之和等于非零的那个操作数。
+                    两个大小相等，符号相反的非零有穷值之和为 +0。
+                    其它情况下，既没有无穷大也没有 NaN 或者零参与运算，并且操作数要么大小不等，要么符号相同，结果计算出来后会按照 IEEE 754 round-to-nearest 取到最接近的能表示的数。如果值过大不能表示，则结果为相应的正负无穷大。如果值过小不能表示，则结果为相应的正负零。ECMAScript 要求支持 IEEE 754 规定的渐进下溢。
+                    - 运算符作用于两个数字类型时表示减法，产生两个操作数之差。左边操作数是被减数右边是减数。给定操作数 a 和 b，总是有 a–b 产生与 a + (-b) 产生相同结果。
+                */
             }
         }
 
@@ -729,7 +839,7 @@ namespace es5{
             /**
              * 逻辑且表达式
              */
-            function LogicalANDExpression (left: LogicalANDExpression, right: BitwiseORExpression) {
+            function LogicalANDExpression(left: LogicalANDExpression, right: BitwiseORExpression) {
                 const lref = evaluating(left)
                 const lval = types.GetValue(lref)
                 if (conversion.ToBoolean(lval) === false) {
@@ -742,7 +852,7 @@ namespace es5{
             /**
              *
              */
-            function LogicalORExpression (left: LogicalORExpression, right: LogicalANDExpression) {
+            function LogicalORExpression(left: LogicalORExpression, right: LogicalANDExpression) {
 
             }
 
@@ -763,7 +873,7 @@ namespace es5{
     /**
      * 13 函数定义
      */
-    namespace functionDeclaration{
+    namespace functionDeclaration {
         // #region Utils
         /**
          * 获得参数列表的标识符字符串
@@ -775,7 +885,7 @@ namespace es5{
         /**
          * 创建函数对象
          */
-        export function createFunctionObject (argumentList, functionBody, scope: execution.LexicalEnvironment, strict: boolean) {
+        export function createFunctionObject(argumentList, functionBody, scope: execution.LexicalEnvironment, strict: boolean) {
             let F = new types.Object()
             F = F as builtins.Function
             F['[[Class]]'] = 'Function'
@@ -832,28 +942,28 @@ namespace es5{
          * [[ThrowTypeError]] 对象是个唯一的函数对象
          */
         const ThrowTypeError = (function () {
-            return () => {}
+            return () => { }
         })()
     }
 
     /**
      * 15 内置类型
      */
-    namespace builtins{
+    namespace builtins {
         export class Boolean extends types.Object {
-            constructor (value: any) {
+            constructor(value: any) {
                 super()
                 // @ts-ignore
                 return conversion.ToBoolean(value)
             }
         }
         export class Number extends types.Object {
-            constructor (value: any) {
+            constructor(value: any) {
                 super()
             }
         }
         export class String extends types.Object {
-            constructor (value: any) {
+            constructor(value: any) {
                 super()
             }
         }
@@ -870,7 +980,7 @@ namespace es5{
             /**
              * 返回一个表示参数对象是否可能是由本对象构建的布尔值。在标准内置 ECMAScript 对象中只有 Function 对象实现 [[HasInstance]]
              */
-            '[[HasInstance]]' () {
+            '[[HasInstance]]'() {
 
             }
 
@@ -890,11 +1000,11 @@ namespace es5{
             '[[Code]]': any
 
             // 本项目的其他地方会调用原生的call,但实际上就是调用这个[[Call]]
-            '[[Call]]' (thisArgs, ...args: any[]) {
+            '[[Call]]'(thisArgs, ...args: any[]) {
 
             }
 
-            '[[Construct]]' (argumentList?: any[]) {
+            '[[Construct]]'(argumentList?: any[]) {
 
             }
         }
