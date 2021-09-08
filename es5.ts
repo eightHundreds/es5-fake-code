@@ -214,10 +214,20 @@ namespace es5 {
             }
         }
 
+        /**
+         * 无法解析的引用, 基值为undefined
+         * @param V 
+         * @returns 
+         */
         export function IsUnresolvableReference(V: Reference) {
             return V.baseValue === undefined
         }
 
+        /**
+         * 获得基值
+         * @param V 
+         * @returns 
+         */
         export function GetBase(V: Reference) {
             return V.baseValue
         }
@@ -240,6 +250,9 @@ namespace es5 {
 
         /**
          * 返回引用值 V 的引用名称部分
+         * 
+         * 比如 const a =1;
+         * 对于a的引用类型,GetReferencedName结果就是字符串'a'
          * @param V
          */
         export function GetReferencedName(V: Reference) {
@@ -801,7 +814,7 @@ namespace es5 {
                 }
 
                 // 当两个都是数值时
-                
+
                 /*
                 加法遵循 IEEE 754 二进制双精度幅度浮点算法规则：
                     若两个操作数之一为 NaN，结果为 NaN。
